@@ -54,6 +54,13 @@ git clone https://github.com/Deri-Nugroho/docker-1.git .
 File `index.html` akan otomatis terisi tanpa perlu input manual.
 
 ### 5. Jalankan image httpd:alpine sebagai container web-http yang listen di port 8080 lokal
+
+**PENTING:** Jika ada container dengan nama yang sama atau port 8080 sudah digunakan, hapus dulu:
+```bash
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+```
+
 ```bash
 docker run -d --name web-http -p 8080:80 -v /var/mywww:/usr/local/apache2/htdocs httpd:alpine
 ```
@@ -67,6 +74,13 @@ docker start web-http
 ## Pilihan Image Web Server Lain
 
 ### httpd:latest (~145 MB)
+
+**PENTING:** Hapus container yang ada sebelum membuat yang baru:
+```bash
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+```
+
 ```bash
 docker run -d \
   --name web-http \
@@ -77,6 +91,13 @@ docker run -d \
 ```
 
 ### php:apache (~450 MB+, sudah lengkap Apache2 + PHP)
+
+**PENTING:** Hapus container yang ada sebelum membuat yang baru:
+```bash
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+```
+
 ```bash
 docker run -d \
   --name web-http \
@@ -86,6 +107,15 @@ docker run -d \
 ```
 
 ### LAMPP (PHP + MySQL Server)
+
+**PENTING:** Hapus container yang ada sebelum membuat yang baru:
+```bash
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+docker stop lamp-all 2>/dev/null || true
+docker rm lamp-all 2>/dev/null || true
+```
+
 ```bash
 docker pull cto4/aio:latest
 docker run -d --name lamp-all \
@@ -100,6 +130,12 @@ docker run -d --name lamp-all \
 
 ## Membuat Custom Image dengan docker commit
 
+**PENTING:** Hapus container ubuntu yang ada sebelum membuat yang baru:
+```bash
+docker stop ubuntu 2>/dev/null || true
+docker rm ubuntu 2>/dev/null || true
+```
+
 ```bash
 docker pull ubuntu:24.04
 docker images ubuntu
@@ -107,8 +143,12 @@ docker run -d --name ubuntu ubuntu:24.04 tail -f /dev/null
 docker exec -it ubuntu bash
 ```
 
-Setelah melakukan konfigurasi di dalam container:
+Setelah melakukan konfigurasi di dalam container, **KELUAR DULU** dari container:
+```bash
+exit
+```
 
+Kemudian jalankan commit dari host machine (bukan dari dalam container):
 ```bash
 docker commit ubuntu ubuntu-custom:v1
 ```
