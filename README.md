@@ -229,6 +229,33 @@ Cek dengan:
 docker image ls
 ```
 
+### Jalankan Custom Image sebagai Web Server
+
+Setelah membuat custom image, jalankan sebagai container web server:
+
+**PENTING:** Hapus container ubuntu yang ada dan stop container lain yang menggunakan port 8080:
+```bash
+docker stop ubuntu 2>/dev/null || true
+docker rm ubuntu 2>/dev/null || true
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+```
+
+Jalankan custom image sebagai web server:
+```bash
+docker run -d --name web-http -p 8080:80 ubuntu-custom:v1
+```
+
+Start Apache di dalam container:
+```bash
+docker exec web-http service apache2 start
+```
+
+Cek status container:
+```bash
+docker ps
+```
+
 ## Akses Web Server
 
 Setelah container berjalan, akses web server melalui browser di:
