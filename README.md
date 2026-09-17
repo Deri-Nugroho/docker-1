@@ -173,6 +173,7 @@ bash /tmp/setup-ubuntu-container.sh
 # Di dalam container, buat script manual
 cat > /tmp/setup-ubuntu-container.sh << 'EOF'
 #!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
 apt update
 apt install -y curl wget vim git apache2 php php-mysql php-curl php-gd php-mbstring php-xml php-zip
 a2enmod rewrite

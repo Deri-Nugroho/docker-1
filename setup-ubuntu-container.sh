@@ -2,6 +2,9 @@
 # Script konfigurasi untuk ubuntu container
 # Jalankan ini di dalam container dengan: bash setup-ubuntu-container.sh
 
+# Set non-interactive mode untuk menghindari prompt manual
+export DEBIAN_FRONTEND=noninteractive
+
 echo "=== Mulai Konfigurasi Ubuntu Container ==="
 
 # Update package lists
