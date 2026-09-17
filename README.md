@@ -143,7 +143,47 @@ docker run -d --name ubuntu ubuntu:24.04 tail -f /dev/null
 docker exec -it ubuntu bash
 ```
 
-Setelah melakukan konfigurasi di dalam container, **KELUAR DULU** dari container:
+### Konfigurasi di dalam Container
+
+Setelah masuk ke dalam container, lakukan konfigurasi berikut:
+
+**Opsi 1: Menggunakan script otomatis**
+```bash
+# Copy script dari repository (jika sudah di-clone ke /var/mywww)
+cp /var/mywww/setup-ubuntu-container.sh /tmp/
+chmod +x /tmp/setup-ubuntu-container.sh
+bash /tmp/setup-ubuntu-container.sh
+```
+
+**Opsi 2: Manual step-by-step**
+```bash
+# 1. Update package lists
+apt update
+
+# 2. Install basic utilities
+apt install -y curl wget vim git
+
+# 3. Install Apache web server
+apt install -y apache2
+
+# 4. Install PHP dan modul
+apt install -y php php-mysql php-curl php-gd php-mbstring php-xml php-zip
+
+# 5. Konfigurasi Apache
+a2enmod rewrite
+
+# 6. Buat halaman index
+echo "<h1>Hello dari Custom Ubuntu Container</h1>" > /var/www/html/index.html
+echo "<p>Container ini dikonfigurasi dengan Apache + PHP</p>" >> /var/www/html/index.html
+
+# 7. Buat file PHP info untuk testing
+echo "<?php phpinfo(); ?>" > /var/www/html/info.php
+
+# 8. Start Apache
+service apache2 start
+```
+
+Setelah selesai melakukan konfigurasi di dalam container, **KELUAR DULU** dari container:
 ```bash
 exit
 ```
