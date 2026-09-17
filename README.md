@@ -7,7 +7,7 @@ Instance/mesin yang digunakan adalah Ubuntu/Debian.
 
 ### 1. Update dan install docker.io
 ```bash
-sudo apt update && apt install -y docker.io
+sudo apt update && sudo apt install -y docker.io
 ```
 
 Cek apakah docker sudah active running:
@@ -239,6 +239,8 @@ docker stop ubuntu 2>/dev/null || true
 docker rm ubuntu 2>/dev/null || true
 docker stop web-http 2>/dev/null || true
 docker rm web-http 2>/dev/null || true
+docker stop lamp-all 2>/dev/null || true
+docker rm lamp-all 2>/dev/null || true
 ```
 
 Jalankan custom image sebagai web server:
