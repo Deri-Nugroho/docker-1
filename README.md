@@ -48,7 +48,8 @@ sudo mkdir -p /var/mywww
 Clone repository ini ke dalam direktori tersebut:
 ```bash
 cd /var/mywww
-git clone https://github.com/Deri-Nugroho/docker-1.git .
+sudo git clone https://github.com/Deri-Nugroho/docker-1.git .
+sudo chown -R $USER:$USER /var/mywww
 ```
 
 File `index.html` akan otomatis terisi tanpa perlu input manual.
@@ -148,9 +149,38 @@ docker exec -it ubuntu bash
 Setelah masuk ke dalam container, lakukan konfigurasi berikut:
 
 **Opsi 1: Menggunakan script otomatis**
+
+**PENTING:** Container ubuntu tidak memiliki akses ke direktori host `/var/mywww`. Ada dua cara:
+
+**Cara A: Mount volume saat membuat container (rekomendasi)**
 ```bash
-# Copy script dari repository (jika sudah di-clone ke /var/mywww)
-cp /var/mywww/setup-ubuntu-container.sh /tmp/
+# Hapus container yang ada dulu
+docker stop ubuntu 2>/dev/null || true
+docker rm ubuntu 2>/dev/null || true
+
+# Buat container dengan volume mount
+docker run -d --name ubuntu -v /var/mywww:/host-files ubuntu:24.04 tail -f /dev/null
+docker exec -it ubuntu bash
+
+# Di dalam container, jalankan script
+cp /host-files/setup-ubuntu-container.sh /tmp/
+chmod +x /tmp/setup-ubuntu-container.sh
+bash /tmp/setup-ubuntu-container.sh
+```
+
+**Cara B: Copy script content manual (tanpa mount volume)**
+```bash
+# Di dalam container, buat script manual
+cat > /tmp/setup-ubuntu-container.sh << 'EOF'
+#!/bin/bash
+apt update
+apt install -y curl wget vim git apache2 php php-mysql php-curl php-gd php-mbstring php-xml php-zip
+a2enmod rewrite
+echo "<h1>Hello dari Custom Ubuntu Container</h1>" > /var/www/html/index.html
+echo "<p>Container ini dikonfigurasi dengan Apache + PHP</p>" >> /var/www/html/index.html
+echo "<?php phpinfo(); ?>" > /var/www/html/info.php
+service apache2 start
+EOF
 chmod +x /tmp/setup-ubuntu-container.sh
 bash /tmp/setup-ubuntu-container.sh
 ```
