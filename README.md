@@ -219,10 +219,6 @@ Setelah membuat custom image, jalankan sebagai container web server:
 ```bash
 docker stop ubuntu 2>/dev/null || true
 docker rm ubuntu 2>/dev/null || true
-docker stop web-http 2>/dev/null || true
-docker rm web-http 2>/dev/null || true
-docker stop lamp-all 2>/dev/null || true
-docker rm lamp-all 2>/dev/null || true
 ```
 
 Jalankan custom image sebagai web server:
