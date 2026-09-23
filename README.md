@@ -125,8 +125,6 @@ docker run -d --name lamp-all \
 
 **PENTING:** Hapus container ubuntu yang ada sebelum membuat yang baru:
 ```bash
-docker stop ubuntu 2>/dev/null || true
-docker rm ubuntu 2>/dev/null || true
 docker stop lamp-all 2>/dev/null || true
 docker rm lamp-all 2>/dev/null || true
 ```
