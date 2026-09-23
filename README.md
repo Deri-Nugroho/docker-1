@@ -125,6 +125,8 @@ docker run -d --name lamp-all \
 
 **PENTING:** Hapus container ubuntu yang ada sebelum membuat yang baru:
 ```bash
+docker stop ubuntu 2>/dev/null || true
+docker rm ubuntu 2>/dev/null || true
 docker stop lamp-all 2>/dev/null || true
 docker rm lamp-all 2>/dev/null || true
 ```
@@ -132,7 +134,7 @@ docker rm lamp-all 2>/dev/null || true
 ```bash
 docker pull ubuntu:24.04
 docker images ubuntu
-docker run -d --name ubuntu ubuntu:24.04 tail -f /dev/null
+docker run -d --name ubuntu -v /var/mywww:/host-files ubuntu:24.04 tail -f /dev/null
 docker exec -it ubuntu bash
 ```
 
@@ -140,20 +142,8 @@ docker exec -it ubuntu bash
 
 Setelah masuk ke dalam container, lakukan konfigurasi berikut:
 
-**Opsi 1: Menggunakan script otomatis**
-
-**PENTING:** Container ubuntu tidak memiliki akses ke direktori host `/var/mywww`. Ada dua cara:
-
-**Cara A: Mount volume saat membuat container (rekomendasi)**
+**Opsi 1: Menggunakan script otomatis (rekomendasi)**
 ```bash
-# Hapus container yang ada dulu
-docker stop ubuntu 2>/dev/null || true
-docker rm ubuntu 2>/dev/null || true
-
-# Buat container dengan volume mount
-docker run -d --name ubuntu -v /var/mywww:/host-files ubuntu:24.04 tail -f /dev/null
-docker exec -it ubuntu bash
-
 # Di dalam container, jalankan script
 cp /host-files/setup-ubuntu-container.sh /tmp/
 chmod +x /tmp/setup-ubuntu-container.sh
