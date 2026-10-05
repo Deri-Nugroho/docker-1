@@ -1,15 +1,28 @@
-# LKPD 3 - Membangun Image dengan Dockerfile
+# LKPD 1 - Dasar Docker dan Web Server HTTP
 
 ## Petunjuk Awal
 Instance/mesin yang digunakan adalah Ubuntu/Debian.
 
 ## Langkah Kerja
 
-### A. Persiapkan Lingkungan Kerja Container Docker
-
-#### 1. Instal paket yang dibutuhkan
+### 1. Update dan install docker.io
 ```bash
-sudo apt update && sudo apt install -y git nano curl links mc docker.io nmap
+sudo apt update && sudo apt install -y docker.io
+```
+
+Cek apakah docker sudah active running:
+```bash
+sudo systemctl status docker
+```
+
+Jika belum active running, jalankan:
+```bash
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+### 2. Ubah agar user Anda bisa akses docker tanpa sudo
+```bash
 sudo usermod -aG docker $USERMU
 sudo newgrp docker
 ```
@@ -20,198 +33,215 @@ sudo usermod -aG docker deri
 sudo newgrp docker
 ```
 
-#### 2. Pull image yang diperlukan
+### 3. Sekarang docker dapat dijalankan tanpa sudo
 ```bash
-docker pull ubuntu:24.04
-docker pull mariadb:11-jammy
+docker --version
+docker -v
+docker run hello-world
 ```
 
-Lihat hasilnya:
-```bash
-docker image ls
-```
-
-#### 3. Buat jaringan yang akan digunakan untuk komunikasi antar container
-```bash
-docker network create mynet
-```
-
----
-
-### B. Jalankan Container dbserver
-
-#### 4. Jalankan container image mariadb:11-jammy tanpa mengekspose port ke host
-Ini lebih aman karena database hanya bisa diakses oleh container lain yang berada pada network yang sama (mynet).
-
-```bash
-docker run -d --name dbserver --network mynet -e MYSQL_ROOT_PASSWORD=pass123 mariadb:11-jammy
-```
-
----
-
-### C. Buat Dockerfile
-
-#### 5. Buat direktori kerja dan file Dockerfile
-```bash
-mkdir ~/bws
-cd ~/bws
-```
-
-**Opsi 1: Clone repository ini (rekomendasi)**
-```bash
-git clone https://github.com/Deri-Nugroho/docker-3.git .
-```
-
-Dengan cara ini, Dockerfile dan file-file yang dibutuhkan akan otomatis terisi tanpa perlu input manual.
-
-**Opsi 2: Buat Dockerfile manual**
-```bash
-nano Dockerfile
-```
-
-Isi dengan:
-```dockerfile
-FROM ubuntu:24.04
-
-# Supaya apt install tidak nanya interaktif
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install Apache, PHP, dan modul yang dibutuhkan aplikasi
-RUN apt update && apt install -y \
-	nano \
-	apache2 \
-	php \
-	php-mysqli \
-	php-mysql \
-	libapache2-mod-php \
-	mysql-client \
-	curl \
-	&& apt clean && rm -rf /var/lib/apt/lists/*
-
-# Expose port HTTP
-EXPOSE 80
-
-# Jalankan Apache sebagai proses utama (foreground)
-CMD ["apache2ctl", "-D", "FOREGROUND"]
-```
-
----
-
-### D. Build Image dari Dockerfile
-
-#### 6. Build image-nya
-```bash
-docker build -t ubuntu-ws:v1 ~/bws/
-```
-
-#### 7. Lihat image-nya
-```bash
-docker image ls
-```
-
----
-
-### E. Coba Run Container dari Image Baru
-
-#### 7. Run image menjadi container
-```bash
-docker run -d \
- --name webserver1 \
- --network mynet \
- -p 8001:80 \
- -v /var/mywww:/var/www/html \
- --restart unless-stopped \
- ubuntu-ws:v1
-```
-
----
-
-### F. Verifikasi dan Akses Web Server
-
-#### 8. Persiapkan folder aplikasi dan uploads
-Jika folder `/var/mywww` belum berisi aplikasi, clone repository LKPD 2:
+### 4. Buat direktori lokal yang akan di-mounting ke dalam container
 ```bash
 sudo mkdir -p /var/mywww
-sudo git clone https://github.com/Deri-Nugroho/docker-2.git /var/mywww
-sudo chown -R $USER:$USER /var/mywww
-sudo mkdir -p /var/mywww/uploads
-sudo chown -R www-data:www-data /var/mywww/uploads
-sudo chmod 755 /var/mywww/uploads
 ```
 
-#### 9. Buat database yang dibutuhkan aplikasi
+Clone repository ini ke dalam direktori tersebut:
 ```bash
-docker exec -it dbserver mariadb -u root -ppass123 -e "CREATE DATABASE toko_db;"
+cd /var/mywww
+sudo git clone https://github.com/Deri-Nugroho/docker-1.git .
+sudo chown -R $USER:$USER /var/mywww
 ```
 
-#### 10. Verifikasi semua container berjalan
+File `index.html` akan otomatis terisi tanpa perlu input manual.
+
+### 5. Jalankan image httpd:alpine sebagai container web-http yang listen di port 8080 lokal
+
+```bash
+docker run -d --name web-http -p 8080:80 -v /var/mywww:/usr/local/apache2/htdocs httpd:alpine
+```
+
+### 6. Coba start dan stop container web-http
+```bash
+docker stop web-http
+docker start web-http
+```
+
+## Pilihan Image Web Server Lain
+
+### httpd:latest (~145 MB)
+
+**PENTING:** Hapus container yang ada sebelum membuat yang baru:
+```bash
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+```
+
+```bash
+docker run -d \
+  --name web-http \
+  -p 8080:80 \
+  -v /var/mywww:/var/www/html \
+  -w /var/www/html \
+  httpd:latest
+```
+
+### php:apache (~450 MB+, sudah lengkap Apache2 + PHP)
+
+**PENTING:** Hapus container yang ada sebelum membuat yang baru:
+```bash
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+```
+
+```bash
+docker run -d \
+  --name web-http \
+  -p 8080:80 \
+  -v /var/mywww:/var/www/html \
+  php:apache
+```
+
+### LAMPP (PHP + MySQL Server)
+
+**PENTING:** Hapus container yang ada sebelum membuat yang baru:
+```bash
+docker stop web-http 2>/dev/null || true
+docker rm web-http 2>/dev/null || true
+```
+
+```bash
+docker pull cto4/aio:latest
+docker run -d --name lamp-all \
+  -p 8080:80 \
+  -p 8081:8080 \
+  -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=admin123 \
+  -v $(pwd)/src:/var/www/localhost/htdocs \
+  -v $(pwd)/db-data:/run/mysqld \
+  cto4/aio:latest
+```
+
+## Membuat Custom Image dengan docker commit
+
+**PENTING:** Hapus container ubuntu yang ada sebelum membuat yang baru:
+```bash
+docker stop lamp-all 2>/dev/null || true
+docker rm lamp-all 2>/dev/null || true
+```
+
+```bash
+docker pull ubuntu:24.04
+docker images ubuntu
+docker run -d --name ubuntu -v /var/mywww:/host-files ubuntu:24.04 tail -f /dev/null
+docker exec -it ubuntu bash
+```
+
+### Konfigurasi di dalam Container
+
+Setelah masuk ke dalam container, lakukan konfigurasi berikut:
+
+**Opsi 1: Menggunakan script otomatis (rekomendasi)**
+```bash
+# Di dalam container, jalankan script
+cp /host-files/setup-ubuntu-container.sh /tmp/
+chmod +x /tmp/setup-ubuntu-container.sh
+bash /tmp/setup-ubuntu-container.sh
+```
+
+**Cara B: Copy script content manual (tanpa mount volume)**
+```bash
+# Di dalam container, buat script manual
+cat > /tmp/setup-ubuntu-container.sh << 'EOF'
+#!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
+apt update
+apt install -y curl wget vim git apache2 php php-mysql php-curl php-gd php-mbstring php-xml php-zip
+a2enmod rewrite
+echo "<h1>Hello dari Custom Ubuntu Container</h1>" > /var/www/html/index.html
+echo "<p>Container ini dikonfigurasi dengan Apache + PHP</p>" >> /var/www/html/index.html
+echo "<?php phpinfo(); ?>" > /var/www/html/info.php
+service apache2 start
+EOF
+chmod +x /tmp/setup-ubuntu-container.sh
+bash /tmp/setup-ubuntu-container.sh
+```
+
+**Opsi 2: Manual step-by-step**
+```bash
+# 1. Update package lists
+apt update
+
+# 2. Install basic utilities
+apt install -y curl wget vim git
+
+# 3. Install Apache web server
+apt install -y apache2
+
+# 4. Install PHP dan modul
+apt install -y php php-mysql php-curl php-gd php-mbstring php-xml php-zip
+
+# 5. Konfigurasi Apache
+a2enmod rewrite
+
+# 6. Buat halaman index
+echo "<h1>Hello dari Custom Ubuntu Container</h1>" > /var/www/html/index.html
+echo "<p>Container ini dikonfigurasi dengan Apache + PHP</p>" >> /var/www/html/index.html
+
+# 7. Buat file PHP info untuk testing
+echo "<?php phpinfo(); ?>" > /var/www/html/info.php
+
+# 8. Start Apache
+service apache2 start
+```
+
+Setelah selesai melakukan konfigurasi di dalam container, **KELUAR DULU** dari container:
+```bash
+exit
+```
+
+Kemudian jalankan commit dari host machine (bukan dari dalam container):
+```bash
+docker commit ubuntu ubuntu-custom:v1
+```
+
+Cek dengan:
+```bash
+docker image ls
+```
+
+### Jalankan Custom Image sebagai Web Server
+
+Setelah membuat custom image, jalankan sebagai container web server:
+
+**PENTING:** Hapus container ubuntu yang ada dan stop container lain yang menggunakan port 8080:
+```bash
+docker stop ubuntu 2>/dev/null || true
+docker rm ubuntu 2>/dev/null || true
+```
+
+Jalankan custom image sebagai web server:
+```bash
+docker run -d --name web-http -p 8080:80 ubuntu-custom:v1
+```
+
+Start Apache di dalam container:
+```bash
+docker exec web-http service apache2 start
+```
+
+Cek status container:
 ```bash
 docker ps
 ```
-Pastikan `dbserver` dan `webserver1` berstatus `Up`.
 
-#### 11. Cek aplikasi bisa diakses
-```bash
-curl http://localhost:8001
+## Akses Web Server
+
+Setelah container berjalan, akses web server melalui browser di:
 ```
-Atau buka lewat browser: `http://<IP-server>:8001`
-
-#### 12. Cek koneksi webserver ke dbserver (dari dalam container)
-```bash
-docker exec -it webserver1 bash -c "mysql -h dbserver -u root -ppass123 -e 'SHOW DATABASES;'"
+http://localhost:8080
 ```
 
-#### 13. Verifikasi tabel database dan data dummy
-```bash
-# Cek tabel
-docker exec -it webserver1 bash -c "mysql -h dbserver -u root -ppass123 toko_db -e 'SHOW TABLES;'"
-
-# Cek data users
-docker exec -it webserver1 bash -c "mysql -h dbserver -u root -ppass123 toko_db -e 'SELECT username, nama_lengkap, role FROM users;'"
-
-# Cek data barang
-docker exec -it webserver1 bash -c "mysql -h dbserver -u root -ppass123 toko_db -e 'SELECT * FROM barang;'"
+Atau jika menggunakan instance remote:
 ```
-
----
-
-### G. Perintah Bantuan (Troubleshooting)
-
-| Kebutuhan | Command |
-|-----------|---------|
-| Lihat log container | `docker logs -f webserver1` |
-| Masuk ke shell container yang jalan | `docker exec -it webserver1 bash` |
-| Restart container | `docker restart webserver1` |
-| Lihat network & container yang tergabung | `docker network inspect mynet` |
-| Hapus semua container (reset total) | `docker rm -f webserver1 dbserver` |
-| Hapus network | `docker network rm mynet` |
-
----
-
-### Informasi Aplikasi
-
-Aplikasi ini adalah Toko Sederhana berbasis web menggunakan PHP native (mysqli), Bootstrap 5, dan MySQL.
-
-**Fitur Utama:**
-- 🔐 Login multi-role: `admin`, `kasir`, `gudang`
-- 📦 Manajemen Barang: tambah, edit, hapus, upload foto, pencarian
-- 🏷️ Manajemen Kategori barang
-- 🧾 Point of Sale (POS): keranjang belanja, hitung kembalian, cetak struk
-- 📊 Laporan Penjualan: filter tanggal, total omset, barang terlaris
-- 👥 Manajemen User: tambah/edit/hapus user & role (khusus admin)
-- ⚙️ Auto setup database: tabel & data dummy dibuat otomatis jika belum ada
-
-**Akun Demo (Dummy):**
-| Username | Password | Role |
-|----------|----------|------|
-| admin | 123 | admin |
-| kasir | 123 | kasir |
-| gudang | 123 | gudang |
-
-⚠️ **Penting:** Ganti password akun-akun ini sebelum digunakan di lingkungan produksi.
-
----
-
-### Catatan
-Password "pass123" pada dokumen ini hanya untuk keperluan pembelajaran/lokal. Untuk lingkungan produksi, gunakan password yang kuat dan pertimbangkan menyimpan kredensial melalui Docker secret atau file `.env`, bukan langsung di command line.
-
+http://<IP-INSTANCE>:8080
+```
